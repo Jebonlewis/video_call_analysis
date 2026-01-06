@@ -7,6 +7,11 @@ import librosa
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 import os
+import scipy.signal as signal
+
+# Compatibility: librosa may call scipy.signal.hann which is missing in newer SciPy.
+if not hasattr(signal, "hann") and hasattr(signal, "windows"):
+    signal.hann = signal.windows.hann
 
 
 class ProsodyAnalyzer:

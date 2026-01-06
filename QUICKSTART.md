@@ -8,7 +8,7 @@ Before running, ensure you have:
 
 - ✅ Python 3.9 or higher installed
 - ✅ FFmpeg installed and in PATH
-- ✅ All API keys ready (Sarvam, Groq, Hugging Face)
+- ✅ All API keys ready (Sarvam, Gemini)
 - ✅ Virtual environment created (recommended)
 
 ---
@@ -55,14 +55,14 @@ pip install -r requirements.txt
 2. **Edit `.env` file** and add your API keys:
    ```env
    SARVAM_API_KEY=your_actual_sarvam_key_here
-   GROQ_API_KEY=your_actual_groq_key_here
+   GEMINI_API_KEY=your_actual_gemini_key_here
    ```
    
-   **Note:** `HF_TOKEN` is no longer required - speaker diarization uses free clustering algorithms.
+   **Note:** `HF_TOKEN` and `GROQ_API_KEY` are no longer required.
 
 3. **Get your API keys:**
    - **Sarvam API Key**: https://dashboard.sarvam.ai/signin
-   - **Groq API Key**: https://console.groq.com/keys
+   - **Gemini API Key**: https://makersuite.google.com/app/apikey
    
    **Note:** Speaker diarization now uses free clustering (no Hugging Face token needed!)
 
@@ -254,7 +254,7 @@ Factors affecting speed:
 - Video length
 - Number of speakers
 - Hardware (CPU/GPU)
-- API response times (Sarvam, Groq)
+- API response times (Sarvam, Gemini)
 
 ---
 
@@ -392,7 +392,7 @@ ffmpeg -version
 1. **Start with short videos** (1-2 minutes) to test the setup
 2. **Use MP4 format** for best compatibility
 3. **Check server logs** for detailed processing information
-4. **Monitor API quotas** (Sarvam and Groq have rate limits)
+4. **Monitor API quotas** (Sarvam and Gemini have rate limits - Gemini: 5 req/min)
 5. **Use GPU** if available for faster processing
 
 ---

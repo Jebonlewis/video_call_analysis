@@ -12,7 +12,7 @@ This system processes recorded video calls to generate enriched transcripts that
 
 ## 🏗️ Architecture
 
-The system uses a **hybrid architecture** combining signal-processing models with LLM reasoning:
+The system uses a **hybrid architecture** combining signal-processing models with visual-language reasoning. A Visual Language Learning Model (Google Gemini Vision) is used for joint visual-language reasoning:
 
 ```
 Video Input (.mp4)
@@ -41,7 +41,8 @@ Video Input (.mp4)
 └─────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────┐
-│ 5. LLM Reasoning (Groq/LLaMA-3)      │
+│ 5. LLM Reasoning (Google Gemini Vision)│
+│    - Joint visual-language analysis   │
 │    - Emotion normalization           │
 │    - Reaction classification         │
 │    - Metadata synthesis              │
@@ -64,6 +65,10 @@ Enriched Transcript (JSON/Text)
    - Sign up at [Sarvam AI Dashboard](https://dashboard.sarvam.ai/signin)
    - Get your API key from the dashboard
    - Set as `SARVAM_API_KEY` environment variable
+
+4. **Google Gemini API Key** (for visual-language reasoning)
+   - Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Set as `GEMINI_API_KEY` environment variable
 
 **Note:** Speaker diarization now uses a free clustering-based approach (no external API keys required)
 
@@ -96,15 +101,14 @@ pip install -r requirements.txt
    Create a `.env` file in the project root with:
    ```env
    SARVAM_API_KEY=your_sarvam_api_key_here
-   GROQ_API_KEY=your_groq_api_key_here
-   HF_TOKEN=your_huggingface_token_here
+   GEMINI_API_KEY=your_gemini_api_key_here
    ```
    
    **Required Variables:**
    - `SARVAM_API_KEY` - Get from https://dashboard.sarvam.ai/signin
-   - `GROQ_API_KEY` - Get from https://console.groq.com/keys
+   - `GEMINI_API_KEY` - Get from https://makersuite.google.com/app/apikey
    
-   **Note:** `HF_TOKEN` is no longer required - speaker diarization uses free clustering
+   **Note:** `HF_TOKEN` and `GROQ_API_KEY` are no longer required
    
    **Optional Variables:**
    - `SARVAM_MODEL` - Default: `saarika:v2.5`
@@ -194,7 +198,7 @@ vllm_video_transcription/
 │   │   └── align_and_merge.py    # Multimodal data alignment
 │   │
 │   ├── llm/
-│   │   └── groq_reasoning.py     # LLM-based metadata synthesis
+│   │   └── gemini_vision_reasoning.py  # Visual-language reasoning
 │   │
 │   ├── pipeline.py               # Main processing pipeline
 │   └── main.py                   # FastAPI application
@@ -211,7 +215,7 @@ vllm_video_transcription/
   - Options: `saarika:v2.5`, `saarika:v2.0`, or other available models
   - Check [Sarvam AI Documentation](https://docs.sarvam.ai) for latest models
 
-- **Groq Model**: Default is `llama3-70b-8192`. Change in `app/llm/groq_reasoning.py`
+- **Gemini Model**: Default is `gemini-1.5-flash`. Change in `app/llm/gemini_vision_reasoning.py`
 
 ### Processing Parameters
 
@@ -269,9 +273,9 @@ vllm_video_transcription/
    - GPU: Optional but recommended
 
 5. **API Rate Limits**:
-   - Groq free tier has rate limits
+   - Gemini API: Limited to 5 requests per minute (enforced)
    - Sarvam API has rate limits based on your plan
-   - Consider caching for repeated requests
+   - In-memory caching implemented for repeated segments
 
 6. **Language Support**:
    - Sarvam API supports multiple Indian languages (Hindi, English, etc.)
@@ -280,7 +284,7 @@ vllm_video_transcription/
 
 ## 🔐 Security & Privacy
 
-- All processing happens **locally** (except Groq API calls)
+- All processing happens **locally** (except Sarvam and Gemini API calls)
 - Video files are processed in-memory when possible
 - No data is stored permanently (unless you implement storage)
 - Use HTTPS in production
@@ -291,7 +295,7 @@ This project uses open-source models and libraries. Check individual licenses:
 - Whisper: MIT
 - pyannote.audio: MIT
 - DeepFace: MIT
-- Groq API: Check Groq terms of service
+- Gemini API: Check Google AI terms of service
 
 ## 🤝 Contributing
 
@@ -312,4 +316,4 @@ For issues:
 
 ---
 
-**Built with**: Sarvam AI, pyannote.audio, DeepFace, Groq, FastAPI
+**Built with**: Sarvam AI, scikit-learn, DeepFace, Google Gemini Vision, FastAPI

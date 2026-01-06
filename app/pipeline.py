@@ -13,9 +13,9 @@ from ingestion.extract_frames import extract_frames
 from asr.sarvam_asr import SarvamTranscriber
 from asr.diarization import SpeakerDiarizer
 from audio_emotion.prosody import ProsodyAnalyzer
-# from vision.facial_emotion import FacialEmotionDetector
+# from app.vision.facial_emotion import FacialEmotionDetector
 from fusion.align_and_merge import MultimodalFusion
-from llm.groq_reasoning import GroqReasoner
+from llm.gemini_vision_reasoning import GeminiVisionReasoner
 
 
 class VideoTranscriptionPipeline:
@@ -161,23 +161,26 @@ class VideoTranscriptionPipeline:
         
         print(f"  - Segments aligned: {len(aligned_segments)}")
         
-        # Step 7: LLM refinement
+        # Step 7: Gemini Vision refinement
         if self.use_llm:
-            print("Step 7: Refining with LLM...")
+            print("Step 7: Refining with Gemini Vision...")
             try:
                 if self.reasoner is None:
-                    self.reasoner = GroqReasoner()
+                    self.reasoner = GeminiVisionReasoner()
                 
-                aligned_segments = self.reasoner.refine_emotions_and_reactions(aligned_segments)
+                aligned_segments = self.reasoner.refine_emotions_and_reactions(aligned_segments, frames)
                 summary = self.reasoner.generate_summary(aligned_segments)
                 
-                print("  - LLM refinement complete")
+                print("  - Gemini Vision refinement complete")
             except Exception as e:
-                print(f"  - LLM refinement failed: {e}. Using basic metadata.")
+                print(f"  - Gemini Vision refinement failed: {e}. Using basic metadata.")
                 summary = {
                     "total_speakers": len(set(s.get("speaker") for s in aligned_segments)),
                     "total_segments": len(aligned_segments),
-                    "dominant_emotions": ["Neutral"],
+                    "dominant_emotions": list(set(
+                        s.get("merged_emotion", {}).get("primary_emotion", "Neutral")
+                        for s in aligned_segments
+                    ))[:5],
                     "summary": "Summary unavailable"
                 }
         else:

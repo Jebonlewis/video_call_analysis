@@ -252,42 +252,48 @@ The system combines:
 
 ### 7. **LLM Reasoning**
 
-#### **Groq API** (`groq`)
-- **Purpose**: Refine emotions, classify tone/reactions
-- **Why**: Fast inference, free tier available
-- **Model**: LLaMA-3 70B (via Groq)
+#### **Google Gemini Vision** (`google-generativeai`)
+- **Purpose**: Joint visual-language reasoning for emotion refinement
+- **Why**: Multimodal analysis (text + image), understands context better
+- **Model**: Gemini 1.5 Flash (via Google AI)
 - **Usage**: 
-  - Receives structured text + metadata
-  - **Never processes raw audio/video** (LLM limitation)
+  - Receives transcript text + representative video frame
+  - Analyzes both text and visual cues simultaneously
   - Performs reasoning tasks:
-    - Emotion normalization
+    - Emotion normalization (refined from audio/visual)
     - Tone classification
     - Reaction detection
-  - Returns refined metadata
-- **Location**: `app/llm/groq_reasoning.py`
+    - Visual cues extraction
+  - Returns refined metadata with visual insights
+- **Location**: `app/llm/gemini_vision_reasoning.py`
+- **Features**:
+  - Rate limiting: 5 requests per minute
+  - Caching: In-memory cache for repeated segments
+  - Frame selection: One frame per segment (midpoint)
+  - Face detection check: Skips if no face in nearby frames
+  - Fallback: Text-only logic if Gemini fails
 
-**LLM Input Format:**
-```json
-{
-  "segments": [
-    {
-      "speaker": "SPEAKER_00",
-      "text": "I'm excited about this!",
-      "audio_emotion": "Excitement",
-      "visual_emotion": "Joy"
-    }
-  ]
-}
-```
+**Gemini Vision Input:**
+- Text: Transcript segment
+- Image: Representative video frame (at segment midpoint)
+- Context: Speaker, audio emotion
 
-**LLM Output:**
+**Gemini Vision Output:**
 ```json
 {
   "emotion": "Joy",
   "tone": "Enthusiastic",
-  "reaction": "Positive engagement"
+  "reaction": "Positive engagement",
+  "visual_cues": ["smiling", "gesturing", "eye contact"]
 }
 ```
+
+**Key Features:**
+- Joint analysis of text + visual cues
+- One frame per segment (efficient)
+- Caching for repeated segments
+- Rate limited (5 req/min)
+- Fallback to text-only if needed
 
 ---
 
@@ -543,30 +549,43 @@ For each transcription segment:
 
 ---
 
-### Step 7: LLM Reasoning
-**File**: `app/llm/groq_reasoning.py`
+### Step 7: Gemini Vision Reasoning
+**File**: `app/llm/gemini_vision_reasoning.py`
 
 **Process:**
-1. Batch segments (10 at a time)
-2. Create prompt with:
-   - Transcript text
-   - Raw emotion predictions
-   - Speaker labels
-3. Send to Groq API (LLaMA-3)
-4. LLM performs:
-   - **Emotion refinement**: Normalize labels, correct mistakes
+1. For each segment:
+   - Select representative frame (midpoint of segment)
+   - Check if face is detected in nearby frames
+   - Create cache key (text + frame hash)
+2. Batch segments (up to 5 per batch)
+3. For each segment in batch:
+   - Check cache first (skip API call if cached)
+   - Prepare prompt with transcript text + context
+   - Add video frame if face detected
+   - Check rate limit (max 5 requests/min)
+   - Send to Gemini Vision API
+4. Gemini performs:
+   - **Joint visual-language analysis**: Understands text + visual cues
+   - **Emotion refinement**: Normalize labels using both modalities
    - **Tone classification**: Enthusiastic, Hesitant, Confident, etc.
    - **Reaction detection**: Question, Agreement, Disagreement, etc.
+   - **Visual cues extraction**: Smiling, gesturing, eye contact, etc.
 5. Parse JSON response
-6. Merge with original segments
+6. Cache results
+7. Merge with original segments
+8. Fallback to text-only logic if Gemini fails
 
-**Why LLM?**
-- Rule-based emotion detection is limited
-- LLM understands context and nuance
-- Can infer tone and reactions from text
-- Refines raw predictions
+**Why Gemini Vision?**
+- Multimodal understanding (text + image)
+- Better context understanding
+- Visual cues enhance emotion detection
+- More accurate than text-only analysis
 
-**Important**: LLM only sees text + metadata, never raw audio/video
+**Optimizations:**
+- One frame per segment (not per-frame analysis)
+- Caching prevents redundant API calls
+- Rate limiting ensures API compliance
+- Face detection check avoids unnecessary calls
 
 ---
 

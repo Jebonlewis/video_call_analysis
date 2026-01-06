@@ -20,8 +20,9 @@ numpy==1.24.3
 deepface==0.0.79
 tensorflow
 
-# LLM API
-groq
+# LLM API (Gemini Vision)
+google-generativeai>=0.3.0
+Pillow>=10.0.0
 
 # Web Framework
 fastapi==0.104.1
